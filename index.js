@@ -17,8 +17,8 @@ const configUtil = require('./utils/config');
 // official petkit region servers endpoint, shared with the settings page.
 const regionServers = require('./homebridge-ui/public/region-servers.js').servers;
 
-const pluginName = 'homebridge-petkit-feeder-mini';
-const platformName = 'petkit_feeder_mini';
+const pluginName = 'homebridge-petkit-feeder-mini-solo';
+const platformName = 'petkit_feeder_mini_solo';
 
 const globalVariables = Object.freeze({
     'support_device_type': [                // valid petkit feeder device type
@@ -233,7 +233,7 @@ function getDataString() {
 class petkit_feeder_plugin {
     constructor(log, config, api) {
         this.log = new logUtil(log, config.log_level || logUtil.LOGLV_INFO);
-        this.log.info('begin to initialize Petkit Feeder Platform.');
+        this.log.info('begin to initialize Petkit Feeder Mini Solo Platform.');
         this.config = config;
 
         if (!api) {
@@ -245,7 +245,7 @@ class petkit_feeder_plugin {
         this.accounts = new Map();      // petkit account session cache, key: server|username
 
         if (!config) {
-            this.log.error("no configure found for Petkit Feeder Platform.");
+            this.log.error("no configure found for Petkit Feeder Mini Solo Platform.");
             this.log.error("double check your config.json.");
             return;
         }
@@ -263,7 +263,7 @@ class petkit_feeder_plugin {
         this.api.on('didFinishLaunching', () => {
             this.initializePlatform();
         });
-        this.log.info('Petkit Feeder Platform loaded.');
+        this.log.info('Petkit Feeder Mini Solo Platform loaded.');
     }
 
     // check and modify configure value
@@ -755,7 +755,7 @@ class petkit_feeder_plugin {
     // discover all the supported devices of this account from the server
     // and add an accessory for each of the enabled ones.
     initializePlatform() {
-        this.log.info('initializing Petkit Feeder Platform.');
+        this.log.info('initializing Petkit Feeder Mini Solo Platform.');
         this.log.debug('request device info from Petkit server.');
         this.ensureAccountReady(this.platformConf)
             .then(ready => {

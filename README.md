@@ -1,16 +1,17 @@
-## homebridge-petkit-feeder-mini
+# Homebridge Petkit Feeder Mini Solo
+
+Package name: `homebridge-petkit-feeder-mini-solo`. This fork adds Fresh Element Solo (D4) support to [homebridge-petkit-feeder-mini](https://github.com/elfive/homebridge-petkit-feeder-mini).
+
+本项目是支持 Solo（D4）的独立 fork，包名为 `homebridge-petkit-feeder-mini-solo`，平台标识为 `petkit_feeder_mini_solo`。从原版迁移时，请将配置中的 `"platform": "petkit_feeder_mini"` 改为 `"platform": "petkit_feeder_mini_solo"`，或通过本插件设置页重新配置。
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/elfive/homebridge-petkit-feeder-mini/master/images/petkit-feeder-mini.jpg">
   <br>
-  <a href="https://www.npmjs.com/package/homebridge-petkit-feeder-mini">
-    <img src="https://flat.badgen.net/npm/v/homebridge-petkit-feeder-mini" alt="NPM Version" />
+  <a href="https://www.npmjs.com/package/homebridge-petkit-feeder-mini-solo">
+    <img src="https://flat.badgen.net/npm/v/homebridge-petkit-feeder-mini-solo" alt="NPM Version" />
   </a>
-  <a href="https://www.npmjs.com/package/homebridge-petkit-feeder-mini">
-    <img src="https://flat.badgen.net/npm/dt/homebridge-petkit-feeder-mini" alt="Total NPM Downloads" />
-  </a>
-  <a href="https://github.com/homebridge/homebridge/wiki/Verified-Plugins">
-    <img src="https://flat.badgen.net/badge/homebridge/verified/purple" alt="Verified by Homebridge" />
+  <a href="https://www.npmjs.com/package/homebridge-petkit-feeder-mini-solo">
+    <img src="https://flat.badgen.net/npm/dt/homebridge-petkit-feeder-mini-solo" alt="Total NPM Downloads" />
   </a>
   <br>
   <strong><a href="#2-how-to-setup">Setup Guide</a> | <a href="#4-how-to-contribute">Contribute</a> </strong>
@@ -134,7 +135,7 @@ All the settings below are <strong>platform level</strong> settings: this plugin
 
 |           field   name            |  type  | required |                  default                   |                range                | description                                                  |
 | :-------------------------------: | :----: | :------: | :----------------------------------------: | :---------------------------------: | ------------------------------------------------------------ |
-|             platform              | string |   yes    |            'petkit_feeder_mini'             |        'petkit_feeder_mini'         | Must be 'petkit_feeder_mini' in order to use this plugin.    |
+|             platform              | string |   yes    |            'petkit_feeder_mini_solo'             |        'petkit_feeder_mini_solo'         | Must be 'petkit_feeder_mini_solo' in order to use this plugin.    |
 |             log_level             |  int   |    no    |                      2                      |            1,2,3,4,9                | one of these values:<br/>- 1: Debug<br/>- 2: Info<br/>- 3: Warn<br/>- 4: Error<br/>- 9: None |
 |              region               | string |    no    |                     'CN'                    |                 ---                 | the country code of your Petkit account, sent to the login request. The Petkit server address is taken from the official server of this country code automatically. If login fails, set it to your own country code, e.g. CN / HK / JP / SG / US / CA / IT ... |
 |              username             | string |    no    |                    ---                     |                 ---                 | your Petkit account username/email. Provide username and password together to enable account login mode, then the <strong>headers below are no longer needed</strong>. All the devices of this account will be added automatically. |
@@ -194,7 +195,7 @@ we recomand you entered all the headers you captured. If you don't want to do so
   "enable_lightMode": true,
   "reverse_foodStorage_indicator": true,
   "fast_response": true,
-  "platform": "petkit_feeder_mini"
+  "platform": "petkit_feeder_mini_solo"
 }]
 ```
 
@@ -226,12 +227,12 @@ we recomand you entered all the headers you captured. If you don't want to do so
   "enable_lightMode": true,
   "reverse_foodStorage_indicator": true,
   "fast_response": true,
-  "platform": "petkit_feeder_mini"
+  "platform": "petkit_feeder_mini_solo"
 }]
 ```
 
 ### session persistence
 
-In account login mode, the session id is cached in `<homebridge_storage_path>/homebridge-petkit-feeder-mini/petkit-session.json` and reused across homebridge restarts. Only the session id and its login time are stored, <strong>your password is never persisted</strong>. If the cached session is expired or invalid, this plugin re-login with your account automatically.
+In account login mode, the session id is cached in `<homebridge_storage_path>/homebridge-petkit-feeder-mini-solo/petkit-session.json` and reused across homebridge restarts. Only the session id and its login time are stored, <strong>your password is never persisted</strong>. If the cached session is expired or invalid, this plugin re-login with your account automatically.
 
 

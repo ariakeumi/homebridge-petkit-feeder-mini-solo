@@ -12,6 +12,8 @@
 
 <div class="container-fluid">
 
+  <h4>Homebridge Petkit Feeder Mini Solo</h4>
+
   <div class="alert alert-info py-2" role="alert">
     <b>This plugin logs into the Petkit server with your account, fetches the session and discovers the devices automatically. Test the login first, then choose the devices to control and save the config.<br>
     此插件通过 Petkit 账号登录服务器，自动获取会话并发现设备。请先测试登录，登录成功后选择要控制的设备并保存配置。</b><br>
@@ -187,7 +189,7 @@
 <script src="region-servers.js"></script>
 <script>
 (async () => {
-  const PLATFORM = 'petkit_feeder_mini';
+  const PLATFORM = 'petkit_feeder_mini_solo';
   // petkit country code -> default server address / country name mapping,
   // loaded from region-servers.js, generated from the official petkit
   // region servers endpoint.

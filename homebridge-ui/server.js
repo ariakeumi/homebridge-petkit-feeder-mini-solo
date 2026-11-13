@@ -1,6 +1,6 @@
 'use strict';
 
-// custom UI server for homebridge-petkit-feeder-mini.
+// custom UI server for homebridge-petkit-feeder-mini-solo.
 //
 // this script is spawned by the homebridge config ui as a child process when
 // the plugin settings modal is opened, and terminated when the modal is

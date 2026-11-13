@@ -1,8 +1,8 @@
 {
-  "pluginAlias": "petkit_feeder_mini",
+  "pluginAlias": "petkit_feeder_mini_solo",
   "pluginType": "platform",
   "customUi": true,
-  "headerDisplay": "For documentation please see https://github.com/elfive/homebridge-petkit-feeder-mini",
+  "headerDisplay": "Homebridge Petkit Feeder Mini Solo — https://github.com/ariakeumi/homebridge-petkit-feeder-mini",
   "footerDisplay": "",
   "schema": {
     "type": "object",
@@ -10,7 +10,7 @@
     "properties": {
       "name": {
         "type": "string",
-        "default": "Petkit Feeder"
+        "default": "Homebridge Petkit Feeder Mini Solo"
       },
       "log_level": {
         "title": "log_level",
