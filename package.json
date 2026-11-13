@@ -1,11 +1,11 @@
 {
   "name": "homebridge-petkit-feeder-mini",
   "version": "3.1.3",
-  "description": "control your petkit feeder mini to feed your lovely pet.",
+  "description": "Control Petkit Feeder Element, Mini and Fresh Element Solo (D4) from HomeKit.",
   "main": "index.js",
   "scripts": {
     "test-homebridge": "/usr/bin/homebridge -P ./ -I -U /var/lib/homebridge",
-    "test": "echo Ok."
+    "test": "node test/solo.js"
   },
   "keywords": [
     "petkit",

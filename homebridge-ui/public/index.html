@@ -92,7 +92,7 @@
         <div class="col-md-12">
           <label class="form-label" for="MealAmount_name">MealAmount Name / 投喂份量名称</label>
           <input type="text" class="form-control" id="MealAmount_name" value="MealAmount">
-          <small class="form-text text-muted">Name of the MealAmount fan speed shown in HomeKit.<br>HomeKit 中投喂份量(风扇转速)的名称。</small>
+          <small class="form-text text-muted">Name of the MealAmount fan speed shown in HomeKit. Solo (D4): 0–5 portions; Mini / Element: 0–10 portions. Zero skips feeding.<br>HomeKit 中投喂份量(风扇转速)的名称。Solo (D4)：0–5 份；Mini / Element：0–10 份。0 表示不投喂。</small>
         </div>
         <div class="col-md-12">
           <label class="form-label" for="FoodStorage_name">FoodStorage Name / 余粮指示名称</label>
@@ -347,7 +347,7 @@
   function renderDevices() {
     const list = $('devices-list');
     if (!lastDevices.length) {
-      list.innerHTML = '<div class="alert alert-warning py-2 mb-0">No supported device (Feeder / FeederMini) found under this account.<br>该账号下没有发现支持的设备(Feeder / FeederMini)。</div>';
+      list.innerHTML = '<div class="alert alert-warning py-2 mb-0">No supported device (Feeder / FeederMini / Solo D4) found under this account.<br>该账号下没有发现支持的设备(Feeder / FeederMini / Solo D4)。</div>';
       return;
     }
 

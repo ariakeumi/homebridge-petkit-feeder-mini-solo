@@ -48,7 +48,7 @@ const ACCOUNT_CLIENT = {
     'version': '13.2.1',
 };
 
-const SUPPORT_DEVICE_TYPE = ['Feeder', 'FeederMini'];
+const SUPPORT_DEVICE_TYPE = ['Feeder', 'FeederMini', 'D4'];
 
 // ---------- petkit request helpers(same as index.js) ----------
 
@@ -112,6 +112,7 @@ function normalizeDeviceType(deviceType) {
     const lower_type = String(deviceType).toLowerCase();
     if (lower_type === 'feedermini') return 'FeederMini';
     if (lower_type === 'feeder') return 'Feeder';
+    if (lower_type === 'd4') return 'D4';
     return deviceType;
 }
 

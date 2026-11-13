@@ -39,7 +39,9 @@
 
 ## 1) Description
 
-control your petkit feeder mini from homekit, get full use of iOS automation.
+Control your Petkit Feeder Element, Feeder Mini and Fresh Element Solo (D4) from HomeKit, and use them in iOS automations.
+
+支持 Petkit Feeder Element、Feeder Mini 和 Fresh Element Solo（D4），同一账号下可同时添加多台不同型号的喂食器。登录后在设置页面勾选设备，保存配置并重启 Homebridge 即可。
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/elfive/homebridge-petkit-feeder-mini/master/images/screenshot.jpg" alt="screenshot" /><img src="https://raw.githubusercontent.com/elfive/homebridge-petkit-feeder-mini/master/images/screenshot2.jpg" alt="screenshot2" />
@@ -52,13 +54,13 @@ control your petkit feeder mini from homekit, get full use of iOS automation.
 ### features
 
 - provides a custom settings page in the Homebridge UI: test login with your Petkit account, pick which devices to control, no packet capture needed(since v3.0.0);
-- uses a fan speed to control the meal amount;
+- uses a fan speed to control the meal amount: Solo (D4) supports 0–5 portions (cloud amount 10–50, step 10), Mini / Element support 0–10 portions (cloud amount 5–50, step 5); zero skips feeding;
 - uses a switch to commit the drop;
-- uses a switch to control the Petkit feeder mini light mode;
-- uses a switch to control the Petkit feeder mini manual lock;
+- uses a switch to control the feeder light mode;
+- uses a switch to control the feeder manual lock;
 - uses a occupancy to indicate food storage status;
 - uses a filter maintenance to indicate desiccant status(include auto reset desiccant left days, this may not show in homekit);
-- uses a battery service to indicate device power status(only for Petkit Feeder Mini, include power level, charging status and low battery alert in Homekit)
+- uses a battery service to indicate device power status(for Petkit Feeder Mini and Solo, including power level, charging status and low battery alert in HomeKit)
 - can fetch device info from Petkit server and shows in Homekit.
 
 
@@ -66,7 +68,7 @@ control your petkit feeder mini from homekit, get full use of iOS automation.
 ### limitations
 
 - enable/disable meal plan for the day(may be in the next major version, currently no plan to do it).
-- currently this plugin for <a href="https://github.com/homebridge/homebridge">homebridge</a> just tested with <a href="https://petkit.co.uk/product/petkit-element-mini-auto-feeder/">Petkit-feeder-mini (official store link)</a>, and this plugin currently only tested and works in Asia(include China mainland) and North America, other area may need more work.
+- supported models are Feeder Element (<code>Feeder</code>), Feeder Mini (<code>FeederMini</code>) and Fresh Element Solo (<code>D4</code>). Solo discovery, status reading and setting updates (writing existing values and reading them back) have been verified against the CN server. Solo feeding and desiccant reset have automated request tests; actual dispensing and reset still need verification on the device. This plugin has been tested in Asia (including China mainland) and North America; other regions may need more work.
 - (since v3.0.0) with account login mode, this plugin logs into the Petkit server for you, discovers <strong>all the devices of your account</strong> automatically, fetches the X-Session and group id automatically, persists the session id to disk and re-login automatically when the session expires. Note that Petkit only allows one active session per account, so a dedicated Petkit account is recommended.
 - because version 3.x.x is developed on a dynamic platform plugin, and not implement auto remove deleted device(s), so you may need to delete cached accessories manually.
 - <strong>service names</strong>: every device is exported as one HomeKit accessory named after the device(智能喂食器 etc.), with one sub-accessory per service(DropMeal switch, MealAmount fan, FoodStorage indicator, Desiccant filter, ManualLock switch, LightMode switch, Battery). The sub-accessory names come from the <code>*_name</code> config items, and the plugin re-applies them on every homebridge restart, even for accessories cached by an older plugin version. Note that the Home app on iOS may keep showing previously cached names for already-paired accessories: if a sub-accessory still shows the old name(like the accessory name) after a restart, rename it once in the Home app, or re-pair the bridge to pick up the configured names.
