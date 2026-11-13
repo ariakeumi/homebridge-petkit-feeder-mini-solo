@@ -27,6 +27,11 @@ class MockService {
     testCharacteristic(type) { return this.characteristics.has(type); }
     addCharacteristic(type) { return this.getCharacteristic(type); }
     addOptionalCharacteristic(type) { return this.getCharacteristic(type); }
+    removeCharacteristic(characteristic) {
+        for (const [type, value] of this.characteristics) {
+            if (value === characteristic) this.characteristics.delete(type);
+        }
+    }
     setPrimaryService() {}
 }
 
@@ -51,7 +56,7 @@ for (const name of ['Switch', 'Fan', 'OccupancySensor', 'FilterMaintenance', 'Ba
     Service[name].UUID = name;
 }
 const Characteristic = {
-    ChargingState: {CHARGING: 1, NOT_CHARGING: 0},
+    ChargingState: {CHARGING: 1, NOT_CHARGING: 0, NOT_CHARGEABLE: 2},
     StatusLowBattery: {BATTERY_LEVEL_LOW: 1, BATTERY_LEVEL_NORMAL: 0},
 };
 for (const name of ['On', 'RotationSpeed', 'OccupancyDetected', 'FilterChangeIndication', 'FilterLifeLevel',
@@ -85,7 +90,8 @@ function createPlatform(overrides = {}) {
 function deviceReply(model) {
     return {result: {
         name: model + ' feeder', sn: 'test-serial', firmware: '1.0.0', timezone: 'Asia/Shanghai',
-        state: {food: 1, batteryPower: 4, batteryStatus: 0, desiccantLeftDays: 29},
+        state: Object.assign({food: 1, batteryPower: 4, batteryStatus: 0, desiccantLeftDays: 29},
+            model === 'D4' ? {pim: 1, batteryPower: 0, batteryStatus: 0} : {}),
         settings: {manualLock: 0, lightMode: 0},
     }};
 }
@@ -172,7 +178,9 @@ test('HomeKit initializes Solo and Mini together with model-specific ranges and 
     assert.strictEqual(element.services.battery_status_service, undefined);
     assert.strictEqual(solo.config.get('sn'), 'test-serial');
     assert.strictEqual(solo.config.get('timezone'), 'Asia/Shanghai');
-    assert.strictEqual(solo.services.battery_status_service.getCharacteristic(Characteristic.BatteryLevel).value, 100);
+    assert.strictEqual(solo.services.battery_status_service.testCharacteristic(Characteristic.BatteryLevel), false);
+    assert.strictEqual(solo.services.battery_status_service.getCharacteristic(Characteristic.StatusLowBattery).value, 0);
+    assert.strictEqual(mini.services.battery_status_service.getCharacteristic(Characteristic.BatteryLevel).value, 100);
 });
 
 test('Solo and Mini food indicators support full, empty and reversed states', async () => {
@@ -275,9 +283,9 @@ test('Solo status, daily feed and desiccant requests use the correct endpoints',
     platform.hb_desiccantIndicator_get(device, (error, value) => { assert.ifError(error); assert.strictEqual(value, 1); });
 });
 
-test('battery polling and reads agree at 50% and respect the AC warning option', async () => {
+test('Mini battery polling and reads agree at 50% and respect the AC warning option', async () => {
     const platform = createPlatform();
-    for (const model of ['D4', 'FeederMini']) {
+    for (const model of ['FeederMini']) {
         const device = await createDevice(platform, model);
         for (const batteryPower of [0, 2, 4]) {
             for (const batteryStatus of [0, 1]) {
@@ -293,6 +301,54 @@ test('battery polling and reads agree at 50% and respect the AC warning option',
             }
         }
     }
+});
+
+test('Solo only reports low backup batteries while running on installed batteries', async () => {
+    const platform = createPlatform();
+    const device = await createDevice(platform, 'D4');
+    // Captured Solo AC state: pim=1, batteryPower=0, batteryStatus=0.
+    // batteryPower is presence, batteryStatus is normal/low, not a percentage.
+    const cases = [
+        {state: {pim: 1, batteryPower: 0, batteryStatus: 0}, low: 0},
+        {state: {pim: 1, batteryPower: 1, batteryStatus: 0}, low: 0},
+        {state: {pim: 1, batteryPower: 1, batteryStatus: 1}, low: 0},
+        {state: {pim: 2, batteryPower: 1, batteryStatus: 1}, low: 0},
+        {state: {pim: 2, batteryPower: 1, batteryStatus: 0}, low: 1},
+        {state: {pim: 0, batteryPower: 0, batteryStatus: 0}, low: 0},
+    ];
+    for (const ignore of [false, true]) {
+        device.config.set('ignore_battery_when_charging', ignore);
+        for (const {state, low} of cases) {
+            const reply = deviceReply('D4');
+            Object.assign(reply.result.state, state);
+            platform.http_getDeviceInfo = async () => reply;
+            await new Promise(resolve => platform.http_getDeviceDetailStatus(device, resolve));
+            assert.strictEqual(device.status.pim, state.pim);
+            platform.uploadStatusToHomebridge(device);
+            const battery = device.services.battery_status_service;
+            assert.strictEqual(battery.getCharacteristic(Characteristic.StatusLowBattery).value, low);
+            assert.strictEqual(battery.getCharacteristic(Characteristic.ChargingState).value, Characteristic.ChargingState.NOT_CHARGEABLE);
+            assert.strictEqual(battery.testCharacteristic(Characteristic.BatteryLevel), false);
+            platform.hb_deviceStatusLowBattery_get(device, (error, value) => { assert.ifError(error); assert.strictEqual(value, low); });
+            platform.hb_deviceChargingState_get(device, (error, value) => { assert.ifError(error); assert.strictEqual(value, Characteristic.ChargingState.NOT_CHARGEABLE); });
+        }
+    }
+});
+
+test('cached Solo battery services discard the old fabricated percentage on restart', async () => {
+    const platform = createPlatform();
+    const device = await createDevice(platform, 'D4');
+    const battery = device.services.battery_status_service;
+    battery.setCharacteristic(Characteristic.BatteryLevel, 0);
+    battery.setCharacteristic(Characteristic.StatusLowBattery, 1);
+    const serviceCount = device.accessory.services.length;
+    assert(platform.setupAccessory(device));
+    assert.strictEqual(device.services.battery_status_service, battery);
+    assert.strictEqual(device.accessory.services.length, serviceCount);
+    assert.strictEqual(battery.testCharacteristic(Characteristic.BatteryLevel), false);
+    assert.strictEqual(battery.getCharacteristic(Characteristic.StatusLowBattery).value, 0);
+    platform.uploadStatusToHomebridge(device);
+    assert.strictEqual(battery.testCharacteristic(Characteristic.BatteryLevel), false);
 });
 
 test('feeding callbacks acknowledge off and zero, and surface cloud failures', async () => {

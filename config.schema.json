@@ -163,7 +163,8 @@
         "placeholder": "false"
       },
       "ignore_battery_when_charging": {
-        "title": "Ignore battery status when charging.",
+        "title": "Ignore Mini battery warning on external power",
+        "description": "Applies to Mini. Solo automatically suppresses low battery warnings on external power and does not report a battery percentage.",
         "type": "boolean",
         "default": false
       },

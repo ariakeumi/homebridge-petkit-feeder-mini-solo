@@ -160,6 +160,7 @@ class PetkitFeederDevice {
             'food' : 0,                 // this.config.get('reverse_foodStorage_indicator') ? !petkitDevice.status.food : petkitDevice.status.food
             'batteryPower': 0,  
             'batteryStatus': 1,
+            'pim': undefined,
             'desiccantLeftDays' : 0,    // petkitDevice.status.desiccantLeftDays < petkitDevice.config.get('alert_desiccant_threshold') ? 1 : 0
             'manualLock': 0,
             'lightMode': 0,
@@ -213,12 +214,28 @@ class PetkitFeederDevice {
     }
 
     getLowBatteryStatusForHomebridge() {
+        if (this.config.get('model') === 'D4') {
+            // Solo: pim=2 means battery supply; batteryPower=1 means batteries
+            // installed; batteryStatus=1 means normal, 0 means low. In AC mode
+            // the battery fields may both be zero, which is not a low warning.
+            // https://github.com/RobertD502/home-assistant-petkit/blob/main/custom_components/petkit/sensor.py
+            const low = this.status.pim === 2 && this.status.batteryPower === 1 && this.status.batteryStatus === 0;
+            return low ? Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW : Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
+        }
         if (this.status.batteryStatus === 0 && this.config.get('ignore_battery_when_charging')) {
             return Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL;
         }
         return (this.status.batteryPower * globalVariables.config.batteryPersentPerLevel <= 50 ?
             Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW :
             Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL);
+    }
+
+    getChargingStateForHomebridge() {
+        if (this.config.get('model') === 'D4') {
+            return Characteristic.ChargingState.NOT_CHARGEABLE;
+        }
+        return this.status.batteryStatus === 0 ?
+            Characteristic.ChargingState.CHARGING : Characteristic.ChargingState.NOT_CHARGING;
     }
 };
 
@@ -698,7 +715,7 @@ class petkit_feeder_plugin {
             petkitDevice.services.lightMode_service = lightMode_service;
         }
 
-        // Mini and Solo expose the same battery state fields.
+        // Solo reports backup battery presence/status, not Mini's 0-4 level.
         if (globalVariables.battery_device_types.includes(config.get('model'))) {
             service_name = config.get('Battery_name');
             let battery_status_service = findOrCreateRoleService(Service.Battery, 'Battery', service_name);
@@ -706,14 +723,21 @@ class petkit_feeder_plugin {
                 return false;
             }
 
-            battery_status_service.setCharacteristic(Characteristic.BatteryLevel,
-                petkitDevice.status.batteryPower * globalVariables.config.batteryPersentPerLevel);
-            battery_status_service.getCharacteristic(Characteristic.BatteryLevel)
-                .on('get', this.hb_deviceBatteryLevel_get.bind(this, petkitDevice));
+            if (config.get('model') === 'D4') {
+                // Also remove the bogus percentage from cached accessories.
+                if (battery_status_service.testCharacteristic(Characteristic.BatteryLevel)) {
+                    battery_status_service.removeCharacteristic(
+                        battery_status_service.getCharacteristic(Characteristic.BatteryLevel));
+                }
+            } else {
+                battery_status_service.setCharacteristic(Characteristic.BatteryLevel,
+                    petkitDevice.status.batteryPower * globalVariables.config.batteryPersentPerLevel);
+                battery_status_service.getCharacteristic(Characteristic.BatteryLevel)
+                    .on('get', this.hb_deviceBatteryLevel_get.bind(this, petkitDevice));
+            }
 
-            battery_status_service.setCharacteristic(Characteristic.ChargingState, (petkitDevice.status.batteryStatus == 0 ?
-                Characteristic.ChargingState.CHARGING :
-                Characteristic.ChargingState.NOT_CHARGING));
+            battery_status_service.setCharacteristic(Characteristic.ChargingState,
+                petkitDevice.getChargingStateForHomebridge());
             battery_status_service.getCharacteristic(Characteristic.ChargingState)
                 .on('get', this.hb_deviceChargingState_get.bind(this, petkitDevice));
 
@@ -1002,6 +1026,7 @@ class petkit_feeder_plugin {
         if (deviceInfo.locale) deviceDetailInfo.locale = deviceInfo.locale;
 
         deviceDetailInfo.status = {};
+        if (deviceInfo.state.pim !== undefined) deviceDetailInfo.status.pim = deviceInfo.state.pim;
         // 1 for status ok, 0 for empty
         if (deviceInfo.state.food !== undefined) deviceDetailInfo.status.food = deviceInfo.state.food;
         // this.log.debug('device food storage status is: ' + (deviceDetailInfo.status.food ? 'Ok' : 'Empty'));
@@ -1009,7 +1034,7 @@ class petkit_feeder_plugin {
         if (deviceInfo.state.batteryPower !== undefined) deviceDetailInfo.status.batteryPower = deviceInfo.state.batteryPower;
         // this.log.debug('device battery level is: ' + deviceDetailInfo.status.batteryPower * globalVariables.config.batteryPersentPerLevel);
 
-        // 0 for charging mode, 1 for battery mode
+        // Mini: power mode. Solo: backup battery condition (1 normal, 0 low).
         if (deviceInfo.state.batteryStatus !== undefined) deviceDetailInfo.status.batteryStatus = deviceInfo.state.batteryStatus;
         // this.log.debug('device battery status is: ' + (deviceDetailInfo.status.batteryStatus ? 'charging mode' : 'battery mode'));
 
@@ -1690,16 +1715,19 @@ class petkit_feeder_plugin {
             // battery
             service = petkitDevice.services.battery_status_service;
             // battery level
-            service_status = petkitDevice.status.batteryPower * globalVariables.config.batteryPersentPerLevel;
-            this.log.info(format('battery level is {}%.', service_status));
-            service.setCharacteristic(Characteristic.BatteryLevel, service_status);
+            if (petkitDevice.config.get('model') !== 'D4') {
+                service_status = petkitDevice.status.batteryPower * globalVariables.config.batteryPersentPerLevel;
+                this.log.info(format('battery level is {}%.', service_status));
+                service.setCharacteristic(Characteristic.BatteryLevel, service_status);
+            }
             
             // charging state
-            if (petkitDevice.status.batteryStatus === 0) {
-                service_status = Characteristic.ChargingState.CHARGING;
+            service_status = petkitDevice.getChargingStateForHomebridge();
+            if (service_status === Characteristic.ChargingState.NOT_CHARGEABLE) {
+                this.log.info('backup batteries are not rechargeable.');
+            } else if (service_status === Characteristic.ChargingState.CHARGING) {
                 this.log.info('battery is charging.');
             } else {
-                service_status = Characteristic.ChargingState.NOT_CHARGING;
                 this.log.info('battery is not charging.');
             }
             service.setCharacteristic(Characteristic.ChargingState, service_status);
@@ -1980,10 +2008,7 @@ class petkit_feeder_plugin {
     }
 
     hb_deviceChargingState_get(petkitDevice, callback) {
-        const status = (petkitDevice.status.batteryStatus === 0 ?
-            Characteristic.ChargingState.CHARGING :
-            Characteristic.ChargingState.NOT_CHARGING);
-        callback(null, status);
+        callback(null, petkitDevice.getChargingStateForHomebridge());
     }
 
     hb_deviceStatusLowBattery_get(petkitDevice, callback) {

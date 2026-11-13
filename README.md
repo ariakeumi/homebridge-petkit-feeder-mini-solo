@@ -61,7 +61,7 @@ Control your Petkit Feeder Element, Feeder Mini and Fresh Element Solo (D4) from
 - uses a switch to control the feeder manual lock;
 - uses a occupancy to indicate food storage status;
 - uses a filter maintenance to indicate desiccant status(include auto reset desiccant left days, this may not show in homekit);
-- uses a battery service to indicate device power status(for Petkit Feeder Mini and Solo, including power level, charging status and low battery alert in HomeKit)
+- uses a battery service for Mini (power level, charging status and low battery alert) and Solo (backup battery status, no percentage or charging support). Solo only reports low battery while running on installed backup batteries; AC power without backup batteries does not trigger a warning. The Home app may display a battery warning alongside MealAmount because the services share one accessory.
 - can fetch device info from Petkit server and shows in Homekit.
 
 
@@ -153,7 +153,7 @@ All the settings below are <strong>platform level</strong> settings: this plugin
 |         enable_manualLock         |  bool  |    no    |                   false                    |             true/false              | if enabled, a switch will show in homekit to control the manual lock of the feeder. |
 |         enable_lightMode          |  bool  |    no    |                   false                    |             true/false              | if enabled, a switch will show in homekit to control the lighe mode of the feeder. |
 | reverse_foodStorage<br>_indicator |  bool  |    no    |                   false                    |             true/false              | normally, the occupancy will show an alert in homekit when there is enough food in the feeder, in which situation may not so recognizable, so you can reverse the status bu set this value to true, so when there is not much food, it can show an alert in homekit. |
-| ignore_battery_when<br/>_charging |  bool  |    no    |                   false                    |             true/false              | Ignore battery low level alerm when device connected to a power source.<br>And battery function is disabled when using a Petkit Feeder Element device. |
+| ignore_battery_when<br/>_charging |  bool  |    no    |                   false                    |             true/false              | Ignore Mini low battery warnings while connected to external power. Solo automatically suppresses warnings on external power; it reports backup battery status without a percentage. Battery service is disabled for Feeder Element. |
 |           fast_response           |  bool  |    no    |                   false                    |             true/false              | if set to true, then when received a Homekit set request, return immediately, ignore the result.<br>this is useful when your homebridge or Petkit device has a bad internet connection. |
 
 
